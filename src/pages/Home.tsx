@@ -22,10 +22,9 @@ function Globe() {
     useFrame((_, delta) => {
         if (globeRef.current) globeRef.current.rotation.y += delta * 0.12
     })
-
-    // Andhra Pradesh, India - your home
-    const indiaPos = useMemo(() => latLngToVec3(15.9129, 79.7400, 2.12), [])
-    // New York, USA - where you are now
+    // india coordinates : Andhra Pradesh
+    const indiaPos = useMemo(() => latLngToVec3(16.2997, 80.4573, 2.12), [])
+    // United states coordinates : New York(40.7128, -74.0060)
     const usPos = useMemo(() => latLngToVec3(40.7128, -74.0060, 2.12), [])
 
     return (
@@ -119,7 +118,7 @@ function FlightPath() {
     // Start: Andhra Pradesh (15.9129, 79.7400) -> End: New York (40.7128, -74.0060)
     const arcPoints = useMemo(() => {
         const pts: THREE.Vector3[] = []
-        const startLat = 15.9129, startLng = 79.7400
+        const startLat = 16.2997, startLng = 80.4573
         const endLat = 40.7128, endLng = -74.0060
 
         for (let t = 0; t <= 1; t += 0.005) {

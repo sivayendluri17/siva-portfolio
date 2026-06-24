@@ -1,37 +1,31 @@
+import React from 'react'
 import { motion } from 'framer-motion'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
 import { OrbitControls, Sphere } from '@react-three/drei'
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useState } from 'react'
 import * as THREE from 'three'
 import { TextureLoader } from 'three'
+
+function latLngToVec3(lat: number, lng: number, radius: number): THREE.Vector3 {
+    const phi = (90 - lat) * (Math.PI / 180)
+    const theta = lng * (Math.PI / 180)
+    return new THREE.Vector3(
+        radius * Math.sin(phi) * Math.cos(theta),
+        radius * Math.cos(phi),
+        radius * Math.sin(phi) * Math.sin(theta)
+    )
+}
 
 function Globe() {
     const globeRef = useRef<THREE.Group>(null)
     const earthTexture = useLoader(TextureLoader, 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg')
 
     useFrame((_, delta) => {
-        if (globeRef.current) globeRef.current.rotation.y += delta * 0.15
+        if (globeRef.current) globeRef.current.rotation.y += delta * 0.12
     })
 
-    const indiaPos = useMemo(() => {
-        const phi = (90 - 20) * (Math.PI / 180)
-        const theta = 78 * (Math.PI / 180)
-        return new THREE.Vector3(
-            2.12 * Math.sin(phi) * Math.cos(theta),
-            2.12 * Math.cos(phi),
-            2.12 * Math.sin(phi) * Math.sin(theta)
-        )
-    }, [])
-
-    const usPos = useMemo(() => {
-        const phi = (90 - 38) * (Math.PI / 180)
-        const theta = -97 * (Math.PI / 180)
-        return new THREE.Vector3(
-            2.12 * Math.sin(phi) * Math.cos(theta),
-            2.12 * Math.cos(phi),
-            2.12 * Math.sin(phi) * Math.sin(theta)
-        )
-    }, [])
+    const indiaPos = useMemo(() => latLngToVec3(20, 78, 2.12), [])
+    const usPos = useMemo(() => latLngToVec3(38, -97, 2.12), [])
 
     return (
         <group ref={globeRef}>
@@ -39,97 +33,124 @@ function Globe() {
                 <meshStandardMaterial map={earthTexture} />
             </Sphere>
 
-            {/* India glowing dot */}
+            {/* India gold dot */}
             <mesh position={indiaPos}>
                 <sphereGeometry args={[0.07, 16, 16]} />
-                <meshStandardMaterial color="#c9a84c" emissive="#c9a84c" emissiveIntensity={4} />
+                <meshStandardMaterial color="#c9a84c" emissive="#c9a84c" emissiveIntensity={5} />
             </mesh>
             <mesh position={indiaPos}>
-                <sphereGeometry args={[0.14, 16, 16]} />
-                <meshStandardMaterial color="#c9a84c" transparent opacity={0.35} emissive="#c9a84c" emissiveIntensity={2} />
+                <sphereGeometry args={[0.15, 16, 16]} />
+                <meshStandardMaterial color="#c9a84c" transparent opacity={0.3} emissive="#c9a84c" emissiveIntensity={3} />
             </mesh>
 
-            {/* US glowing dot */}
+            {/* US blue dot */}
             <mesh position={usPos}>
                 <sphereGeometry args={[0.07, 16, 16]} />
-                <meshStandardMaterial color="#60a5fa" emissive="#60a5fa" emissiveIntensity={4} />
+                <meshStandardMaterial color="#60a5fa" emissive="#60a5fa" emissiveIntensity={5} />
             </mesh>
             <mesh position={usPos}>
-                <sphereGeometry args={[0.14, 16, 16]} />
-                <meshStandardMaterial color="#60a5fa" transparent opacity={0.35} emissive="#60a5fa" emissiveIntensity={2} />
+                <sphereGeometry args={[0.15, 16, 16]} />
+                <meshStandardMaterial color="#60a5fa" transparent opacity={0.3} emissive="#60a5fa" emissiveIntensity={3} />
+            </mesh>
+        </group>
+    )
+}
+
+interface AirplaneProps {
+    position: THREE.Vector3
+    quaternion: THREE.Quaternion
+}
+
+function Airplane({ position, quaternion }: AirplaneProps) {
+    return (
+        <group position={position} quaternion={quaternion}>
+            {/* Fuselage */}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[0.016, 0.010, 0.26, 12]} />
+                <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1} metalness={0.8} roughness={0.2} />
+            </mesh>
+            {/* Nose */}
+            <mesh position={[0, 0, 0.15]} rotation={[Math.PI / 2, 0, 0]}>
+                <coneGeometry args={[0.016, 0.07, 12]} />
+                <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1} metalness={0.8} roughness={0.2} />
+            </mesh>
+            {/* Left wing */}
+            <mesh position={[-0.11, 0, 0.01]} rotation={[0, 0.1, 0.08]}>
+                <boxGeometry args={[0.18, 0.007, 0.07]} />
+                <meshStandardMaterial color="#c9a84c" emissive="#c9a84c" emissiveIntensity={2} metalness={0.6} roughness={0.3} />
+            </mesh>
+            {/* Right wing */}
+            <mesh position={[0.11, 0, 0.01]} rotation={[0, -0.1, -0.08]}>
+                <boxGeometry args={[0.18, 0.007, 0.07]} />
+                <meshStandardMaterial color="#c9a84c" emissive="#c9a84c" emissiveIntensity={2} metalness={0.6} roughness={0.3} />
+            </mesh>
+            {/* Vertical tail */}
+            <mesh position={[0, 0.035, -0.09]}>
+                <boxGeometry args={[0.005, 0.065, 0.055]} />
+                <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1} metalness={0.8} roughness={0.2} />
+            </mesh>
+            {/* Horizontal tail */}
+            <mesh position={[0, 0, -0.1]}>
+                <boxGeometry args={[0.09, 0.005, 0.035]} />
+                <meshStandardMaterial color="#c9a84c" emissive="#c9a84c" emissiveIntensity={2} metalness={0.6} roughness={0.3} />
+            </mesh>
+            {/* Glow */}
+            <mesh>
+                <sphereGeometry args={[0.055, 8, 8]} />
+                <meshStandardMaterial color="#c9a84c" transparent opacity={0.18} emissive="#c9a84c" emissiveIntensity={4} />
             </mesh>
         </group>
     )
 }
 
 function FlightPath() {
-    const planeRef = useRef<THREE.Group>(null)
-    const trailRef = useRef<THREE.Line | null>(null)
     const progress = useRef(0)
+    const done = useRef(false)
+    const [planeState, setPlaneState] = useState<{ pos: THREE.Vector3, quat: THREE.Quaternion }>({
+        pos: latLngToVec3(20, 78, 2.45),
+        quat: new THREE.Quaternion()
+    })
 
-    // Arc from India to US going over Middle East and Atlantic
     const arcPoints = useMemo(() => {
         const pts: THREE.Vector3[] = []
-        // India: lat 20, lng 78 | US: lat 38, lng -97
-        for (let t = 0; t <= 1; t += 0.01) {
-            const lat = 20 + (38 - 20) * t + Math.sin(t * Math.PI) * 15
+        for (let t = 0; t <= 1; t += 0.005) {
+            const lat = 20 + (38 - 20) * t
             const lng = 78 + (-97 - 78) * t
-            const r = 2.4 + Math.sin(t * Math.PI) * 0.5
-            const phi = (90 - lat) * (Math.PI / 180)
-            const theta = lng * (Math.PI / 180)
-            pts.push(new THREE.Vector3(
-                r * Math.sin(phi) * Math.cos(theta),
-                r * Math.cos(phi),
-                r * Math.sin(phi) * Math.sin(theta)
-            ))
+            const r = 2.45 + Math.sin(t * Math.PI) * 0.65
+            pts.push(latLngToVec3(lat, lng, r))
         }
         return pts
     }, [])
 
     useFrame((_, delta) => {
-        progress.current = (progress.current + delta * 0.1) % 1
-        if (planeRef.current) {
-            const idx = Math.floor(progress.current * (arcPoints.length - 1))
-            const nextIdx = Math.min(idx + 1, arcPoints.length - 1)
-            planeRef.current.position.copy(arcPoints[idx])
-            const dir = new THREE.Vector3().subVectors(arcPoints[nextIdx], arcPoints[idx]).normalize()
-            planeRef.current.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir)
-        }
+        if (done.current) return
+        progress.current = Math.min(progress.current + delta * 0.07, 1)
+        if (progress.current >= 1) { done.current = true; return }
+
+        const idx = Math.floor(progress.current * (arcPoints.length - 1))
+        const nextIdx = Math.min(idx + 1, arcPoints.length - 1)
+        const pos = arcPoints[idx]
+        const next = arcPoints[nextIdx]
+
+        const dir = new THREE.Vector3().subVectors(next, pos).normalize()
+        const up = pos.clone().normalize()
+        const right = new THREE.Vector3().crossVectors(dir, up).normalize()
+        const fwd = new THREE.Vector3().crossVectors(up, right).normalize().negate()
+        const m = new THREE.Matrix4().makeBasis(right, up, fwd)
+        const q = new THREE.Quaternion().setFromRotationMatrix(m)
+
+        setPlaneState({ pos: pos.clone(), quat: q })
     })
 
     const lineGeometry = useMemo(() => new THREE.BufferGeometry().setFromPoints(arcPoints), [arcPoints])
 
     return (
         <group>
-            {/* Full arc path */}
             <primitive object={new THREE.Line(
                 lineGeometry,
-                new THREE.LineBasicMaterial({ color: '#c9a84c', transparent: true, opacity: 0.4 })
+                new THREE.LineBasicMaterial({ color: '#c9a84c', transparent: true, opacity: 0.5 })
             )} />
-
-            {/* Plane icon made of shapes */}
-            <group ref={planeRef}>
-                {/* Fuselage */}
-                <mesh>
-                    <cylinderGeometry args={[0.025, 0.025, 0.22, 8]} />
-                    <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={2} />
-                </mesh>
-                {/* Wings */}
-                <mesh rotation={[0, 0, Math.PI / 2]} position={[0, 0, 0]}>
-                    <cylinderGeometry args={[0.012, 0.012, 0.28, 8]} />
-                    <meshStandardMaterial color="#c9a84c" emissive="#c9a84c" emissiveIntensity={2} />
-                </mesh>
-                {/* Tail */}
-                <mesh position={[0, -0.09, 0]} rotation={[0, 0, Math.PI / 4]}>
-                    <cylinderGeometry args={[0.008, 0.008, 0.1, 8]} />
-                    <meshStandardMaterial color="#c9a84c" emissive="#c9a84c" emissiveIntensity={2} />
-                </mesh>
-                {/* Glow */}
-                <mesh>
-                    <sphereGeometry args={[0.08, 8, 8]} />
-                    <meshStandardMaterial color="#c9a84c" transparent opacity={0.2} emissive="#c9a84c" emissiveIntensity={3} />
-                </mesh>
-            </group>
+            <Airplane position={planeState.pos} quaternion={planeState.quat} />
         </group>
     )
 }
@@ -142,7 +163,7 @@ function GlobeScene() {
             <directionalLight position={[-5, 3, 2]} intensity={0.8} color="#c9d4ff" />
             <Globe />
             <FlightPath />
-            <OrbitControls enableZoom={false} autoRotate={false} enablePan={false} />
+            <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.8} enablePan={false} />
         </>
     )
 }
@@ -190,45 +211,21 @@ export default function Home({ setActive }: { setActive: (s: string) => void }) 
                         </a>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '4px' }}>
                             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#c9a84c', boxShadow: '0 0 10px #c9a84c' }}></div>
-                            <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'Inter, sans-serif', letterSpacing: 0.5 }}>India</span>
+                            <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'Inter, sans-serif' }}>India</span>
                             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#60a5fa', boxShadow: '0 0 10px #60a5fa', marginLeft: '6px' }}></div>
-                            <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'Inter, sans-serif', letterSpacing: 0.5 }}>United States</span>
+                            <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'Inter, sans-serif' }}>United States</span>
                         </div>
                     </motion.div>
 
                     <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-                              style={{
-                                  color: 'rgba(255,255,255,0.65)',
-                                  fontSize: '1.05rem',
-                                  lineHeight: 1.9,
-                                  marginBottom: '1.8rem',
-                                  maxWidth: 480,
-                                  fontFamily: 'Inter, sans-serif',
-                                  fontWeight: 300,
-                                  letterSpacing: 0.2,
-                                  textShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                                  borderLeft: '2px solid rgba(201,168,76,0.3)',
-                                  paddingLeft: '1rem'
-                              }}>
+                              style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1.05rem', lineHeight: 1.9, marginBottom: '1.8rem', maxWidth: 480, fontFamily: 'Inter, sans-serif', fontWeight: 300, letterSpacing: 0.2, borderLeft: '2px solid rgba(201,168,76,0.3)', paddingLeft: '1rem' }}>
                         I grew up in a small village in India with no laptop and no wifi. But I had one thing, the hunger to build something bigger. I packed one bag, bought a ticket to the US, and started from zero. Today I build software that millions of people use every day.
                     </motion.p>
 
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
                                 style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '2rem' }}>
                         {badges.map(b => (
-                            <span key={b.label} style={{
-                                background: b.bg,
-                                border: `1px solid ${b.color}50`,
-                                color: b.color,
-                                padding: '0.4rem 1rem',
-                                borderRadius: 20,
-                                fontSize: '0.78rem',
-                                fontWeight: 600,
-                                letterSpacing: 0.4,
-                                fontFamily: 'Inter, sans-serif',
-                                boxShadow: `0 0 12px ${b.color}20`,
-                                backdropFilter: 'blur(4px)'
-                            }}>
+                            <span key={b.label} style={{ background: b.bg, border: `1px solid ${b.color}50`, color: b.color, padding: '0.4rem 1rem', borderRadius: 20, fontSize: '0.78rem', fontWeight: 600, letterSpacing: 0.4, fontFamily: 'Inter, sans-serif', boxShadow: `0 0 12px ${b.color}20` }}>
                 {b.label}
               </span>
                         ))}
@@ -237,41 +234,15 @@ export default function Home({ setActive }: { setActive: (s: string) => void }) 
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}
                                 style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '3rem' }}>
                         <button onClick={() => setActive('Projects')}
-                                style={{
-                                    background: 'linear-gradient(135deg, #c9a84c, #e8c96a)',
-                                    color: '#0a1628',
-                                    padding: '0.8rem 2.2rem',
-                                    border: 'none',
-                                    borderRadius: 8,
-                                    fontWeight: 700,
-                                    fontSize: '0.9rem',
-                                    cursor: 'pointer',
-                                    fontFamily: 'Inter, sans-serif',
-                                    letterSpacing: 0.5,
-                                    boxShadow: '0 4px 20px rgba(201,168,76,0.35)',
-                                    transition: 'all 0.3s'
-                                }}
+                                style={{ background: 'linear-gradient(135deg, #c9a84c, #e8c96a)', color: '#0a1628', padding: '0.8rem 2.2rem', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'Inter, sans-serif', letterSpacing: 0.5, boxShadow: '0 4px 20px rgba(201,168,76,0.35)', transition: 'all 0.3s' }}
                                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(201,168,76,0.5)' }}
                                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(201,168,76,0.35)' }}>
                             View My Work
                         </button>
                         <button onClick={() => setActive('About')}
-                                style={{
-                                    background: 'rgba(255,255,255,0.04)',
-                                    color: '#c9a84c',
-                                    padding: '0.8rem 2.2rem',
-                                    border: '1px solid rgba(201,168,76,0.35)',
-                                    borderRadius: 8,
-                                    fontWeight: 500,
-                                    fontSize: '0.9rem',
-                                    cursor: 'pointer',
-                                    fontFamily: 'Inter, sans-serif',
-                                    letterSpacing: 0.5,
-                                    backdropFilter: 'blur(8px)',
-                                    transition: 'all 0.3s'
-                                }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(201,168,76,0.1)'; e.currentTarget.style.borderColor = '#c9a84c'; e.currentTarget.style.transform = 'translateY(-2px)' }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.35)'; e.currentTarget.style.transform = 'translateY(0)' }}>
+                                style={{ background: 'rgba(255,255,255,0.04)', color: '#c9a84c', padding: '0.8rem 2.2rem', border: '1px solid rgba(201,168,76,0.35)', borderRadius: 8, fontWeight: 500, fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'Inter, sans-serif', letterSpacing: 0.5, backdropFilter: 'blur(8px)', transition: 'all 0.3s' }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(201,168,76,0.1)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = 'translateY(0)' }}>
                             My Story
                         </button>
                     </motion.div>

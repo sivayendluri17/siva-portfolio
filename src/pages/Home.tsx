@@ -5,7 +5,7 @@ import { useRef, useMemo } from 'react'
 import * as THREE from 'three'
 
 function Globe() {
-    const globeRef = useRef<THREE.Mesh>(null)
+    const globeRef = useRef<THREE.Group>(null)
     const indiaRef = useRef<THREE.Mesh>(null)
     const usRef = useRef<THREE.Mesh>(null)
 
@@ -90,9 +90,7 @@ function Globe() {
             {gridLines.map((points, i) => {
                 const geometry = new THREE.BufferGeometry().setFromPoints(points)
                 return (
-                    <line key={i} geometry={geometry}>
-                        <lineBasicMaterial color="#c9a84c" transparent opacity={0.15} />
-                    </line>
+                    <primitive key={i} object={new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: '#c9a84c', transparent: true, opacity: 0.15 }))} />
                 )
             })}
 

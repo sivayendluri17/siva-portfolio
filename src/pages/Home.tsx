@@ -1,46 +1,17 @@
 import { motion } from 'framer-motion'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Canvas, useFrame, useLoader } from '@react-three/fiber'
 import { OrbitControls, Sphere } from '@react-three/drei'
 import { useRef, useMemo } from 'react'
 import * as THREE from 'three'
+import { TextureLoader } from 'three'
 
 function Globe() {
     const globeRef = useRef<THREE.Group>(null)
+    const earthTexture = useLoader(TextureLoader, 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg')
 
     useFrame((_, delta) => {
-        if (globeRef.current) globeRef.current.rotation.y += delta * 0.3
+        if (globeRef.current) globeRef.current.rotation.y += delta * 0.2
     })
-
-    const gridLines = useMemo(() => {
-        const lines = []
-        for (let lat = -80; lat <= 80; lat += 20) {
-            const points = []
-            for (let lng = 0; lng <= 360; lng += 5) {
-                const phi = (90 - lat) * (Math.PI / 180)
-                const theta = lng * (Math.PI / 180)
-                points.push(new THREE.Vector3(
-                    2.01 * Math.sin(phi) * Math.cos(theta),
-                    2.01 * Math.cos(phi),
-                    2.01 * Math.sin(phi) * Math.sin(theta)
-                ))
-            }
-            lines.push(points)
-        }
-        for (let lng = 0; lng < 360; lng += 20) {
-            const points = []
-            for (let lat = -90; lat <= 90; lat += 5) {
-                const phi = (90 - lat) * (Math.PI / 180)
-                const theta = lng * (Math.PI / 180)
-                points.push(new THREE.Vector3(
-                    2.01 * Math.sin(phi) * Math.cos(theta),
-                    2.01 * Math.cos(phi),
-                    2.01 * Math.sin(phi) * Math.sin(theta)
-                ))
-            }
-            lines.push(points)
-        }
-        return lines
-    }, [])
 
     const indiaPos = useMemo(() => {
         const phi = (90 - 20) * (Math.PI / 180)
@@ -65,40 +36,27 @@ function Globe() {
     return (
         <group ref={globeRef}>
             <Sphere args={[2, 64, 64]}>
-                <meshStandardMaterial
-                    color="#1a3a6b"
-                    emissive="#0f2040"
-                    emissiveIntensity={0.5}
-                    transparent
-                    opacity={0.95}
-                    roughness={0.4}
-                    metalness={0.3}
-                />
+                <meshStandardMaterial map={earthTexture} />
             </Sphere>
 
-            {gridLines.map((points, i) => (
-                <primitive key={i} object={new THREE.Line(
-                    new THREE.BufferGeometry().setFromPoints(points),
-                    new THREE.LineBasicMaterial({ color: '#c9a84c', transparent: true, opacity: 0.2 })
-                )} />
-            ))}
-
+            {/* India dot */}
             <mesh position={indiaPos}>
                 <sphereGeometry args={[0.08, 16, 16]} />
                 <meshStandardMaterial color="#c9a84c" emissive="#c9a84c" emissiveIntensity={3} />
             </mesh>
             <mesh position={indiaPos}>
                 <sphereGeometry args={[0.16, 16, 16]} />
-                <meshStandardMaterial color="#c9a84c" transparent opacity={0.3} emissive="#c9a84c" emissiveIntensity={2} />
+                <meshStandardMaterial color="#c9a84c" transparent opacity={0.4} emissive="#c9a84c" emissiveIntensity={2} />
             </mesh>
 
+            {/* US dot */}
             <mesh position={usPos}>
                 <sphereGeometry args={[0.08, 16, 16]} />
                 <meshStandardMaterial color="#60a5fa" emissive="#60a5fa" emissiveIntensity={3} />
             </mesh>
             <mesh position={usPos}>
                 <sphereGeometry args={[0.16, 16, 16]} />
-                <meshStandardMaterial color="#60a5fa" transparent opacity={0.3} emissive="#60a5fa" emissiveIntensity={2} />
+                <meshStandardMaterial color="#60a5fa" transparent opacity={0.4} emissive="#60a5fa" emissiveIntensity={2} />
             </mesh>
         </group>
     )
@@ -114,7 +72,7 @@ function FlightPath() {
         for (let t = 0; t <= 1; t += 0.02) {
             const lat = indiaLat + (usLat - indiaLat) * t
             const lng = indiaLng + (usLng - indiaLng) * t
-            const altitude = 2.3 + Math.sin(t * Math.PI) * 0.5
+            const altitude = 2.3 + Math.sin(t * Math.PI) * 0.6
             const phi = (90 - lat) * (Math.PI / 180)
             const theta = lng * (Math.PI / 180)
             points.push(new THREE.Vector3(
@@ -129,7 +87,7 @@ function FlightPath() {
     const planeProgress = useRef(0)
 
     useFrame((_, delta) => {
-        planeProgress.current = (planeProgress.current + delta * 0.15) % 1
+        planeProgress.current = (planeProgress.current + delta * 0.12) % 1
         if (planeRef.current) {
             const idx = Math.floor(planeProgress.current * (arcPoints.length - 1))
             const nextIdx = Math.min(idx + 1, arcPoints.length - 1)
@@ -142,11 +100,11 @@ function FlightPath() {
         <group>
             <primitive object={new THREE.Line(
                 new THREE.BufferGeometry().setFromPoints(arcPoints),
-                new THREE.LineBasicMaterial({ color: '#c9a84c', transparent: true, opacity: 0.5 })
+                new THREE.LineBasicMaterial({ color: '#c9a84c', transparent: true, opacity: 0.7 })
             )} />
             <mesh ref={planeRef}>
-                <sphereGeometry args={[0.07, 8, 8]} />
-                <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={5} />
+                <coneGeometry args={[0.06, 0.15, 8]} />
+                <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={4} />
             </mesh>
         </group>
     )
@@ -155,18 +113,23 @@ function FlightPath() {
 function GlobeScene() {
     return (
         <>
-            <ambientLight intensity={2} />
-            <directionalLight position={[5, 5, 5]} intensity={3} color="#ffffff" />
-            <directionalLight position={[-5, 3, 2]} intensity={2} color="#4a90d9" />
-            <pointLight position={[3, 3, 3]} intensity={3} color="#c9a84c" />
-            <pointLight position={[-3, -3, -3]} intensity={2} color="#60a5fa" />
-            <pointLight position={[0, 5, 0]} intensity={2} color="#ffffff" />
+            <ambientLight intensity={1.5} />
+            <directionalLight position={[5, 5, 5]} intensity={2} color="#ffffff" />
+            <directionalLight position={[-5, 3, 2]} intensity={1} color="#c9d4ff" />
             <Globe />
             <FlightPath />
             <OrbitControls enableZoom={false} autoRotate={false} enablePan={false} />
         </>
     )
 }
+
+const badges = [
+    { label: 'Amazonian Alumni', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+    { label: 'Financial Tech Engineer', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
+    { label: 'Cloud Architect', color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+    { label: 'Published Author', color: '#c9a84c', bg: 'rgba(201,168,76,0.12)' },
+    { label: 'Village to Wall Street', color: '#f472b6', bg: 'rgba(244,114,182,0.12)' },
+]
 
 export default function Home({ setActive }: { setActive: (s: string) => void }) {
     return (
@@ -186,7 +149,7 @@ export default function Home({ setActive }: { setActive: (s: string) => void }) 
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
                                 style={{ display: 'flex', gap: '14px', marginBottom: '1.8rem', alignItems: 'center' }}>
                         <a href="https://github.com/sivayendluri17/siva-portfolio" target="_blank" rel="noopener noreferrer"
-                           style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', transition: 'all 0.2s', cursor: 'pointer' }}
+                           style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', transition: 'all 0.2s' }}
                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(201,168,76,0.2)')}
                            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}>
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
@@ -194,7 +157,7 @@ export default function Home({ setActive }: { setActive: (s: string) => void }) 
                             </svg>
                         </a>
                         <a href="https://www.linkedin.com/in/siva-yendluri/" target="_blank" rel="noopener noreferrer"
-                           style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', transition: 'all 0.2s', cursor: 'pointer' }}
+                           style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', transition: 'all 0.2s' }}
                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(201,168,76,0.2)')}
                            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}>
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
@@ -214,11 +177,12 @@ export default function Home({ setActive }: { setActive: (s: string) => void }) 
                         I grew up in a small village in India with no laptop and no wifi. But I had one thing, the hunger to build something bigger. I packed one bag, bought a ticket to the US, and started from zero. Today I build software that millions of people use every day.
                     </motion.p>
 
+                    {/* Bold badges */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
                                 style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '2rem' }}>
-                        {['Java / J2EE', 'React', 'AWS Certified', 'Spring Boot', 'New York, NY'].map(tag => (
-                            <span key={tag} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)', padding: '0.3rem 0.85rem', borderRadius: 20, fontSize: '0.8rem' }}>
-                {tag}
+                        {badges.map(b => (
+                            <span key={b.label} style={{ background: b.bg, border: `1px solid ${b.color}40`, color: b.color, padding: '0.35rem 1rem', borderRadius: 20, fontSize: '0.8rem', fontWeight: 600, letterSpacing: 0.3 }}>
+                {b.label}
               </span>
                         ))}
                     </motion.div>

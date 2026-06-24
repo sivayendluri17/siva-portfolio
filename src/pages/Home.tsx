@@ -1,21 +1,136 @@
 import { motion } from 'framer-motion'
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Sphere, MeshDistortMaterial } from '@react-three/drei'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { OrbitControls, Sphere } from '@react-three/drei'
+import { useRef, useMemo } from 'react'
+import * as THREE from 'three'
 
-function AnimatedSphere() {
+function Globe() {
+    const globeRef = useRef<THREE.Mesh>(null)
+    const indiaRef = useRef<THREE.Mesh>(null)
+    const usRef = useRef<THREE.Mesh>(null)
+
+    useFrame((_, delta) => {
+        if (globeRef.current) globeRef.current.rotation.y += delta * 0.3
+        if (indiaRef.current) indiaRef.current.rotation.y += delta * 0.3
+        if (usRef.current) usRef.current.rotation.y += delta * 0.3
+    })
+
+    // Grid lines on globe
+    const gridLines = useMemo(() => {
+        const lines = []
+        // Latitude lines
+        for (let lat = -80; lat <= 80; lat += 20) {
+            const points = []
+            for (let lng = 0; lng <= 360; lng += 5) {
+                const phi = (90 - lat) * (Math.PI / 180)
+                const theta = lng * (Math.PI / 180)
+                points.push(new THREE.Vector3(
+                    2.01 * Math.sin(phi) * Math.cos(theta),
+                    2.01 * Math.cos(phi),
+                    2.01 * Math.sin(phi) * Math.sin(theta)
+                ))
+            }
+            lines.push(points)
+        }
+        // Longitude lines
+        for (let lng = 0; lng < 360; lng += 20) {
+            const points = []
+            for (let lat = -90; lat <= 90; lat += 5) {
+                const phi = (90 - lat) * (Math.PI / 180)
+                const theta = lng * (Math.PI / 180)
+                points.push(new THREE.Vector3(
+                    2.01 * Math.sin(phi) * Math.cos(theta),
+                    2.01 * Math.cos(phi),
+                    2.01 * Math.sin(phi) * Math.sin(theta)
+                ))
+            }
+            lines.push(points)
+        }
+        return lines
+    }, [])
+
+    // India position (approx lat: 20, lng: 78)
+    const indiaPos = useMemo(() => {
+        const phi = (90 - 20) * (Math.PI / 180)
+        const theta = 78 * (Math.PI / 180)
+        return new THREE.Vector3(
+            2.15 * Math.sin(phi) * Math.cos(theta),
+            2.15 * Math.cos(phi),
+            2.15 * Math.sin(phi) * Math.sin(theta)
+        )
+    }, [])
+
+    // US position (approx lat: 38, lng: -97)
+    const usPos = useMemo(() => {
+        const phi = (90 - 38) * (Math.PI / 180)
+        const theta = -97 * (Math.PI / 180)
+        return new THREE.Vector3(
+            2.15 * Math.sin(phi) * Math.cos(theta),
+            2.15 * Math.cos(phi),
+            2.15 * Math.sin(phi) * Math.sin(theta)
+        )
+    }, [])
+
     return (
-        <Sphere visible args={[1, 100, 200]} scale={2}>
-            <MeshDistortMaterial
-                color="#c9a84c"
-                attach="material"
-                distort={0.4}
-                speed={2}
-                roughness={0.1}
-                metalness={0.3}
-                emissive="#c9a84c"
-                emissiveIntensity={0.3}
-            />
-        </Sphere>
+        <group ref={globeRef}>
+            {/* Main globe */}
+            <Sphere args={[2, 64, 64]}>
+                <meshStandardMaterial
+                    color="#0a1628"
+                    emissive="#0f2040"
+                    emissiveIntensity={0.3}
+                    transparent
+                    opacity={0.95}
+                    roughness={0.8}
+                    metalness={0.2}
+                />
+            </Sphere>
+
+            {/* Grid lines */}
+            {gridLines.map((points, i) => {
+                const geometry = new THREE.BufferGeometry().setFromPoints(points)
+                return (
+                    <line key={i} geometry={geometry}>
+                        <lineBasicMaterial color="#c9a84c" transparent opacity={0.15} />
+                    </line>
+                )
+            })}
+
+            {/* India dot */}
+            <mesh position={indiaPos}>
+                <sphereGeometry args={[0.08, 16, 16]} />
+                <meshStandardMaterial color="#c9a84c" emissive="#c9a84c" emissiveIntensity={2} />
+            </mesh>
+            {/* India glow ring */}
+            <mesh position={indiaPos}>
+                <sphereGeometry args={[0.14, 16, 16]} />
+                <meshStandardMaterial color="#c9a84c" transparent opacity={0.3} emissive="#c9a84c" emissiveIntensity={1} />
+            </mesh>
+
+            {/* US dot */}
+            <mesh position={usPos}>
+                <sphereGeometry args={[0.08, 16, 16]} />
+                <meshStandardMaterial color="#60a5fa" emissive="#60a5fa" emissiveIntensity={2} />
+            </mesh>
+            {/* US glow ring */}
+            <mesh position={usPos}>
+                <sphereGeometry args={[0.14, 16, 16]} />
+                <meshStandardMaterial color="#60a5fa" transparent opacity={0.3} emissive="#60a5fa" emissiveIntensity={1} />
+            </mesh>
+        </group>
+    )
+}
+
+function GlobeScene() {
+    return (
+        <>
+            <ambientLight intensity={0.5} />
+            <directionalLight position={[5, 5, 5]} intensity={1} color="#ffffff" />
+            <pointLight position={[3, 3, 3]} intensity={1.5} color="#c9a84c" />
+            <pointLight position={[-3, -3, -3]} intensity={0.5} color="#60a5fa" />
+            <Globe />
+            <OrbitControls enableZoom={false} autoRotate={false} enablePan={false} />
+        </>
     )
 }
 
@@ -34,10 +149,9 @@ export default function Home({ setActive }: { setActive: (s:string)=>void }) {
                         Siva<br/>Yendluri
                     </motion.h1>
 
-                    {/* GitHub and LinkedIn icons */}
                     <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.45 }}
-                                style={{ display:'flex', gap:'14px', marginBottom:'1.8rem' }}>
-                        <a href="https://github.com/sivayendluri17" target="_blank" rel="noopener noreferrer"
+                                style={{ display:'flex', gap:'14px', marginBottom:'1.8rem', alignItems:'center' }}>
+                        <a href="https://github.com/sivayendluri17/siva-portfolio" target="_blank" rel="noopener noreferrer"
                            style={{ width:44, height:44, borderRadius:10, background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', transition:'all 0.2s', cursor:'pointer' }}
                            onMouseEnter={e => (e.currentTarget.style.background='rgba(201,168,76,0.2)')}
                            onMouseLeave={e => (e.currentTarget.style.background='rgba(255,255,255,0.07)')}>
@@ -53,11 +167,17 @@ export default function Home({ setActive }: { setActive: (s:string)=>void }) {
                                 <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                             </svg>
                         </a>
+                        <div style={{ display:'flex', alignItems:'center', gap:'8px', marginLeft:'8px' }}>
+                            <div style={{ width:10, height:10, borderRadius:'50%', background:'#c9a84c', boxShadow:'0 0 8px #c9a84c' }}></div>
+                            <span style={{ fontSize:'0.75rem', color:'rgba(255,255,255,0.5)' }}>India</span>
+                            <div style={{ width:10, height:10, borderRadius:'50%', background:'#60a5fa', boxShadow:'0 0 8px #60a5fa', marginLeft:'8px' }}></div>
+                            <span style={{ fontSize:'0.75rem', color:'rgba(255,255,255,0.5)' }}>United States</span>
+                        </div>
                     </motion.div>
 
                     <motion.p initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.5 }}
                               style={{ color:'rgba(255,255,255,0.7)', fontSize:'1.05rem', lineHeight:1.9, marginBottom:'1.5rem', maxWidth:480 }}>
-                        I grew up in a small village in India with no laptop and no wifi. But I had one thing — the hunger to build something bigger. I packed one bag, bought a ticket to the US, and started from zero. Today I build software that millions of people use every day.
+                        I grew up in a small village in India with no laptop and no wifi. But I had one thing, the hunger to build something bigger. I packed one bag, bought a ticket to the US, and started from zero. Today I build software that millions of people use every day.
                     </motion.p>
 
                     <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.55 }}
@@ -93,16 +213,13 @@ export default function Home({ setActive }: { setActive: (s:string)=>void }) {
                 </div>
 
                 <motion.div initial={{ opacity:0, scale:0.8 }} animate={{ opacity:1, scale:1 }} transition={{ delay:0.4, duration:0.8 }}
-                            style={{ height:500 }}>
-                    <Canvas camera={{ position:[0, 0, 5], fov:75 }}>
-                        <ambientLight intensity={1.5} />
-                        <directionalLight position={[5, 5, 5]} intensity={2} color="#ffffff" />
-                        <directionalLight position={[-5, -5, -5]} intensity={1} color="#c9a84c" />
-                        <pointLight position={[0, 0, 3]} intensity={2} color="#c9a84c" />
-                        <pointLight position={[5, 5, 0]} intensity={1.5} color="#ffffff" />
-                        <AnimatedSphere />
-                        <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={2} />
+                            style={{ height:500, position:'relative' }}>
+                    <Canvas camera={{ position:[0, 0, 5], fov:60 }}>
+                        <GlobeScene />
                     </Canvas>
+                    <div style={{ position:'absolute', bottom:20, left:'50%', transform:'translateX(-50%)', fontSize:'0.75rem', color:'rgba(255,255,255,0.35)', textAlign:'center', whiteSpace:'nowrap' }}>
+                        Drag to explore
+                    </div>
                 </motion.div>
             </div>
         </div>

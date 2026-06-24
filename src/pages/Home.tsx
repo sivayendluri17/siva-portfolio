@@ -1,4 +1,3 @@
-import React from 'react'
 import { motion } from 'framer-motion'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
 import { OrbitControls, Sphere } from '@react-three/drei'

@@ -17,14 +17,22 @@ function latLngToVec3(lat: number, lng: number, radius: number): THREE.Vector3 {
 
 function Globe() {
     const globeRef = useRef<THREE.Group>(null)
+    const initialized = useRef(false)
     const earthTexture = useLoader(TextureLoader, 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg')
 
     useFrame((_, delta) => {
-        if (globeRef.current) globeRef.current.rotation.y += delta * 0.12
+        if (globeRef.current) {
+            if (!initialized.current) {
+                globeRef.current.rotation.y = -Math.PI / 2
+                initialized.current = true
+            }
+            globeRef.current.rotation.y += delta * 0.12
+        }
     })
-    // india coordinates : Andhra Pradesh
-    const indiaPos = useMemo(() => latLngToVec3(16.2997, 80.4573 - 90, 2.12), [])
-    // United states coordinates : New York(40.7128, -74.0060)
+
+    // Guntur, Andhra Pradesh
+    const indiaPos = useMemo(() => latLngToVec3(16.2997, 80.4573, 2.12), [])
+    // New York
     const usPos = useMemo(() => latLngToVec3(40.7128, -74.0060, 2.12), [])
 
     return (
@@ -33,7 +41,7 @@ function Globe() {
                 <meshStandardMaterial map={earthTexture} />
             </Sphere>
 
-            {/* Andhra Pradesh - gold glowing dot */}
+            {/* Guntur Andhra Pradesh - gold glowing dot */}
             <mesh position={indiaPos}>
                 <sphereGeometry args={[0.07, 16, 16]} />
                 <meshStandardMaterial color="#c9a84c" emissive="#c9a84c" emissiveIntensity={6} />
@@ -72,37 +80,30 @@ interface AirplaneProps {
 function Airplane({ position, quaternion }: AirplaneProps) {
     return (
         <group position={position} quaternion={quaternion}>
-            {/* Fuselage body */}
             <mesh rotation={[Math.PI / 2, 0, 0]}>
                 <cylinderGeometry args={[0.016, 0.010, 0.28, 12]} />
                 <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.5} metalness={0.9} roughness={0.1} />
             </mesh>
-            {/* Nose cone */}
             <mesh position={[0, 0, 0.16]} rotation={[Math.PI / 2, 0, 0]}>
                 <coneGeometry args={[0.016, 0.08, 12]} />
                 <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.5} metalness={0.9} roughness={0.1} />
             </mesh>
-            {/* Left wing swept back */}
             <mesh position={[-0.13, 0, 0.02]} rotation={[0.05, 0.25, 0.1]}>
                 <boxGeometry args={[0.22, 0.006, 0.08]} />
                 <meshStandardMaterial color="#c9a84c" emissive="#c9a84c" emissiveIntensity={2} metalness={0.7} roughness={0.2} />
             </mesh>
-            {/* Right wing swept back */}
             <mesh position={[0.13, 0, 0.02]} rotation={[0.05, -0.25, -0.1]}>
                 <boxGeometry args={[0.22, 0.006, 0.08]} />
                 <meshStandardMaterial color="#c9a84c" emissive="#c9a84c" emissiveIntensity={2} metalness={0.7} roughness={0.2} />
             </mesh>
-            {/* Vertical tail fin */}
             <mesh position={[0, 0.04, -0.1]}>
                 <boxGeometry args={[0.005, 0.07, 0.06]} />
                 <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1.5} metalness={0.9} roughness={0.1} />
             </mesh>
-            {/* Horizontal tail fins */}
             <mesh position={[0, 0, -0.11]}>
                 <boxGeometry args={[0.10, 0.005, 0.04]} />
                 <meshStandardMaterial color="#c9a84c" emissive="#c9a84c" emissiveIntensity={2} metalness={0.7} roughness={0.2} />
             </mesh>
-            {/* Engine glow */}
             <mesh position={[0, 0, 0.05]}>
                 <sphereGeometry args={[0.06, 8, 8]} />
                 <meshStandardMaterial color="#c9a84c" transparent opacity={0.2} emissive="#c9a84c" emissiveIntensity={4} />
@@ -115,12 +116,10 @@ function FlightPath() {
     const progress = useRef(0)
     const done = useRef(false)
 
-    // Start: Andhra Pradesh (15.9129, 79.7400) -> End: New York (40.7128, -74.0060)
     const arcPoints = useMemo(() => {
         const pts: THREE.Vector3[] = []
-        const startLat = 16.2997, startLng = 80.4573 - 90
+        const startLat = 16.2997, startLng = 80.4573
         const endLat = 40.7128, endLng = -74.0060
-
         for (let t = 0; t <= 1; t += 0.005) {
             const lat = startLat + (endLat - startLat) * t
             const lng = startLng + (endLng - startLng) * t
@@ -139,19 +138,16 @@ function FlightPath() {
         if (done.current) return
         progress.current = Math.min(progress.current + delta * 0.06, 1)
         if (progress.current >= 1) { done.current = true; return }
-
         const idx = Math.floor(progress.current * (arcPoints.length - 1))
         const nextIdx = Math.min(idx + 1, arcPoints.length - 1)
         const pos = arcPoints[idx]
         const next = arcPoints[nextIdx]
-
         const dir = new THREE.Vector3().subVectors(next, pos).normalize()
         const up = pos.clone().normalize()
         const right = new THREE.Vector3().crossVectors(dir, up).normalize()
         const fwd = new THREE.Vector3().crossVectors(up, right).normalize().negate()
         const m = new THREE.Matrix4().makeBasis(right, up, fwd)
         const q = new THREE.Quaternion().setFromRotationMatrix(m)
-
         setPlaneState({ pos: pos.clone(), quat: q })
     })
 

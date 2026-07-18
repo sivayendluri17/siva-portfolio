@@ -17,7 +17,7 @@ export default function Contact() {
                         {[
                             { icon:'📧', label:'Email', value:'sivayendluri17@gmail.com' },
                             { icon:'📱', label:'Phone', value:'+1-779-902-0081' },
-                            { icon:'📍', label:'Location', value:'New York, NY' },
+                            { icon:'📍', label:'Location', value:'New York' },
                             { icon:'💼', label:'LinkedIn', value:'linkedin.com/in/siva-y-548615285' },
                         ].map((item, i) => (
                             <motion.div key={i} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.3+i*0.1 }}

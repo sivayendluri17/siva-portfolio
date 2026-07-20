@@ -11,8 +11,8 @@ const journey = [
   { year: 'May 2023', title: "Master's Degree", desc: 'M.S. Computer Science from Southern Arkansas University. My first degree on American soil.', img: '/images/graduation.jpg', emoji: '🏆' },
   { year: 'Jun 2023 - May 2024', title: 'Regions Bank', desc: 'Software Developer. Built REST APIs, Kafka pipelines and CI/CD automation for banking systems.', img: '/images/coding.jpg', emoji: '🏛️' },
   { year: 'Jun 2024 - Dec 2025', title: 'Amazon, New York', desc: 'Software Development Engineer. Built systems serving millions of customers globally.', img: '/images/professional.jpg', emoji: '📦' },
-  { year: 'Jan 2026 - Present', title: 'Bank of America, New York', desc: 'Software Engineer. Continuing to grow and lead at scale in financial technology.', img: '/images/professional.jpg', emoji: '🏦' },
-  { year: '2024 - May 2026', title: 'Cumberland University', desc: 'Currently pursuing my second Master\u2019s, M.S. in Information Science, alongside my full time role. Always learning, always growing.', img: '/images/graduation.jpg', emoji: '📖' },
+  { year: 'Jan 2026 - Present', title: 'Bank of America, New York', desc: 'Software Engineer. Continuing to grow and lead at scale in financial technology.', img: '/images/bofa.jpg', emoji: '🏦' },
+  { year: '2024 - May 2026', title: 'Cumberland University', desc: 'Currently pursuing another Master\u2019s degree at Cumberland University, MSITM, Masters in Information Technology Management, alongside my full time role. Always learning, always growing.', img: '/images/graduation.jpg', emoji: '📖' },
 ]
 
 function Photo3D({ img, title, index, isMobile }: { img: string, title: string, index: number, isMobile: boolean }) {
